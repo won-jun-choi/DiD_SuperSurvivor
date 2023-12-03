@@ -1,4 +1,12 @@
-# DGP
+# Meta =====================
+# Title: supersurvivor
+# Author: Sanghee
+# Last Edit/Editor: Dec-03-2023 / Sanghee
+# Description: haha
+
+library(cuRe)
+
+###### test DGP ######
 set.seed(1)
 n <- 1000
 t_max <- 5
@@ -34,67 +42,26 @@ df <- tibble(unit = rep(c(1:n), each = t_max),
          Y1 = Y0 + TE[1]*(tau==0) + TE[2]*(tau==1) + TE[3]*(tau==2),
          Y = Y0*(G>t) + Y1*(G<=t))
 
-hist(df$G[df$G_star != 10000])
-df %>% filter(C==1) %>% nrow()
-df %>% filter(C_tilde==0,C==1) %>% nrow()
-
-df %>% group_by(G) %>% summarise(n())
-
-cor(df$V, df$Y)
-df$time_to_treat<-df$G
-df$time_to_treat[df$time_to_treat > t_max] <- t_max
-summary(df$time_to_treat)
-summary(df$time_to_treat[df$C == 1])
-# Create a boxplot of Y grouped by G
-ggplot(df, aes(x = t, y = Y, group = factor(G), color = factor(G))) +
-  stat_summary(fun = mean, geom = "line") +
-  labs(title = "Mean Time Trend of Y by Group G",
-       x = "Time (t)",
-       y = "Mean Y",
-       color = "Group (G)")
-
-
-library(cuRe)
-#install.packages("smcure")
-#install.packages("flexsurvcure")
-#library(flexsurvcure)
-#install.packages("devtools")
-#devtools::install_github('jrdnmdhl/flexsurvcure')
-
-
 #generate time_to_treat
-df$time_to_treat<-df$G
-df$time_to_treat[df$time_to_treat > 5] <- 5
-# df$time_to_treat<-df$G_star
-# df$time_to_treat[df$time_to_treat > 100] <- 100
-# df<-df%>% mutate(C = ifelse(G_star>100,1,0))
+# df$time_to_treat<-df$G
+# df$time_to_treat[df$time_to_treat > t_max] <- t_max
+df$time_to_treat<-df$G_star
+df$time_to_treat[df$time_to_treat > 100] <- 100
+df<-df%>% mutate(C = ifelse(G_star>100,1,0))
 
 #generate status
 df$status <- ifelse(df$C == 0, 1, ifelse(df$C == 1, 0, NA))
 
-summary(df$time_to_treat)
-summary(df$time_to_treat[df$C == 1])
-
-
-#flexsurvcurve status=1 if not censored
-
-summary(df$time_to_treat)
-summary(df$time_to_treat[df$C == 1])
-
-
 super_survivor_logit <- fit.cure.model(Surv(time_to_treat,status) ~ z1+z2, formula.surv=list(~x1+x2+1), data=df, type='mixture',
                                        bhazard=NULL,dist='weibull', link='logit')
 
-summary(super_survivor_logit)
+summary(super_survivor_logit)  # pi: logit, theta: weibull
 gammahat <- super_survivor_logit$coefs[['1']]
 
-#pb of being supersurvivor\
-df$phat1 <- super_survivor_logit$predict()
+#pb of being supersurvivor
+
 df$phat<-exp(gammahat[1]+gammahat[2]*df$x1+gammahat[3]*df$x2)/(1+exp(gammahat[1]+gammahat[2]*df$x1+gammahat[3]*df$x2))
+
 # to compare with p_uncured:
-
 df1 <- df %>% select(phat, p_cured)
-
-list(df$phat)
-list(df$p_cured)
 

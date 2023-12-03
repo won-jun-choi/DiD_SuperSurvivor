@@ -1,3 +1,9 @@
+# Meta =====================
+# Title: DiD using supersurvivor
+# Author: Wonjun
+# Last Edit: Dec-03-2023
+# Description: haha
+
 time_variable <- 't'
 unit_variable <- 'unit'
 
