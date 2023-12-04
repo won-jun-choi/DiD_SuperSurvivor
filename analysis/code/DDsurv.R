@@ -34,7 +34,7 @@ for (i in 1:nrow(results)) {
   # m(g,t|X)
   C_group <- C_group %>%
     mutate(Yt = ifelse(t_==t__,Y,NA),
-           Ygm1 = ifelse(t_==g-1,Y,NA)) %>%
+           Ygm1 = ifelse(t_==g__-1,Y,NA)) %>%
     group_by(i_) %>%
     mutate(dY = sum(Yt, na.rm=T) - sum(Ygm1, na.rm=T)) %>%
     ungroup() %>%
@@ -44,7 +44,7 @@ for (i in 1:nrow(results)) {
   # regression imputation DD
   T_group <- T_group %>%
     mutate(Yt = ifelse(t_==t__,Y,NA),
-           Ygm1 = ifelse(t_==g-1,Y,NA)) %>%
+           Ygm1 = ifelse(t_==g__-1,Y,NA)) %>%
     group_by(i_) %>%
     mutate(dY = sum(Yt, na.rm=T) - sum(Ygm1, na.rm=T)) %>%
     ungroup() %>%
@@ -60,37 +60,37 @@ for (i in 1:nrow(results)) {
 }
 
 # loopppp
-t__ <- 2
-g__ <- 2
-T_group <- df_DD %>% filter(G_==g__)
-C_group <- df_DD %>% filter(G_==G_censored)  # why different?
-C_group <- df_DD %>% filter(C==1)  # why different?
-
-# m(g,t|X)
-C_group <- C_group %>%
-  mutate(Yt = ifelse(t_==t__,Y,NA),
-         Ygm1 = ifelse(t_==g-1,Y,NA)) %>%
-  group_by(i_) %>%
-  mutate(dY = sum(Yt, na.rm=T) - sum(Ygm1, na.rm=T)) %>%
-  ungroup() %>%
-  distinct(i_, .keep_all=TRUE)
-m0 <- lm('dY ~ x1+x2', data=C_group)
-
-T_group <- T_group %>%
-  mutate(Yt = ifelse(t_==t__,Y,NA),
-         Ygm1 = ifelse(t_==g-1,Y,NA)) %>%
-  group_by(i_) %>%
-  mutate(dY = sum(Yt, na.rm=T) - sum(Ygm1, na.rm=T)) %>%
-  ungroup() %>%
-  distinct(i_, .keep_all=TRUE)
-
-Em1 <- mean(T_group$dY)
-T_group$Em0 <- predict(m0, newdata=T_group)
-Em0 <- predict(m0, newdata=T_group) %>% mean()
-
-TE <- Em1 - Em0
-print(TE)
-
-# Reweight
-Em0_reweright <- weighted.mean(T_group$Em0, T_group$phat)
-print(Em1 - Em0_reweright)
+# t__ <- 2
+# g__ <- 2
+# T_group <- df_DD %>% filter(G_==g__)
+# C_group <- df_DD %>% filter(G_==G_censored)  # why different?
+# C_group <- df_DD %>% filter(C==1)  # why different?
+# 
+# # m(g,t|X)
+# C_group <- C_group %>%
+#   mutate(Yt = ifelse(t_==t__,Y,NA),
+#          Ygm1 = ifelse(t_==g-1,Y,NA)) %>%
+#   group_by(i_) %>%
+#   mutate(dY = sum(Yt, na.rm=T) - sum(Ygm1, na.rm=T)) %>%
+#   ungroup() %>%
+#   distinct(i_, .keep_all=TRUE)
+# m0 <- lm('dY ~ x1+x2', data=C_group)
+# 
+# T_group <- T_group %>%
+#   mutate(Yt = ifelse(t_==t__,Y,NA),
+#          Ygm1 = ifelse(t_==g-1,Y,NA)) %>%
+#   group_by(i_) %>%
+#   mutate(dY = sum(Yt, na.rm=T) - sum(Ygm1, na.rm=T)) %>%
+#   ungroup() %>%
+#   distinct(i_, .keep_all=TRUE)
+# 
+# Em1 <- mean(T_group$dY)
+# T_group$Em0 <- predict(m0, newdata=T_group)
+# Em0 <- predict(m0, newdata=T_group) %>% mean()
+# 
+# TE <- Em1 - Em0
+# print(TE)
+# 
+# # Reweight
+# Em0_reweright <- weighted.mean(T_group$Em0, T_group$phat)
+# print(Em1 - Em0_reweright)
