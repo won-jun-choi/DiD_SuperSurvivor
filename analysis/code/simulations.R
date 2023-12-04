@@ -31,7 +31,9 @@ ggplot(df, aes(x = t, y = Y, group = factor(G), color = factor(G))) +
        color = "Group (G)")
 
 ###### Supersurvivor regression ######
-source('supersurvivor.R')
+source('analysis/code/supersurvivor.R')
+View(df %>% filter(G==10000) %>% select(i,G_star,phat))
+df %>% filter(G==10000) %>% group_by(C_tilde) %>% summarise(mean(phat))
 
 ###### DiD using reweighting #######
-source('DDsurv.R')
+source('analysis/code/DDsurv.R')
