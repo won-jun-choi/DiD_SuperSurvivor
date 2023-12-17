@@ -1,13 +1,13 @@
 # Meta =====================
 # Title: simulation DGP
 # Author: Wonjun
-# Last Edit/Editor: Dec-03-2023 / Wonjun
-# Description: haha
+# Last Edit/Editor: Dec-16-2023 / Wonjun
+# Description: DGP for Monte Carlo simulations
 
 n <- 1000
 t_max <- 5
-gamma <- c(1, 2, 0.5)  # for supersurvivor logit
-lambda <- c(0.1, 3, 5)  # for survival function
+gamma <- c(1, 2, 0.5)  # params for supersurvivor logit
+lambda <- c(0.1, 3, 5)  # parmas for survival function
 TE <- c(1, 0.8, 0.6)  # time varying treatment effect
 df <- tibble(unit = rep(c(1:n), each = t_max),
              t = rep(c(1:t_max), times = n),

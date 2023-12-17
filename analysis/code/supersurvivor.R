@@ -63,5 +63,5 @@ gammahat <- super_survivor_logit$coefs[['1']]
 df$phat<-exp(gammahat[1]+gammahat[2]*df$x1+gammahat[3]*df$x2)/(1+exp(gammahat[1]+gammahat[2]*df$x1+gammahat[3]*df$x2))
 
 # to compare with p_uncured:
-df1 <- df %>% select(phat, p_cured)
+df1 <- df %>% select(C, C_tilde, phat, p_cured)
 
