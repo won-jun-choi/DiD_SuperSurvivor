@@ -9,25 +9,28 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse, here)
 
 ###### DGP ######
-source('analysis/code/simDGP.R')
+source('analysis/code/simDGP.R')  # generate simDGP.csv
+df <- read_csv('analysis/temp/simDGP.csv')
 
 # histrogram of G other than 10000
 hist(df$G[df$G != 10000])
 
-# df %>% filter(C==1) %>% nrow()  # the number of control units (ss+censored)
-# df %>% filter(C_tilde==0,C==1) %>% nrow()  # the number of censored units
-# 
-# df %>% group_by(G) %>% summarise(n()) # the number of units in each group
-# 
-# cor(df$V, df$Y)  # corr between surv. ftn. err. and observed Y
+
+df %>% filter(C==1) %>% nrow()  # the number of C==1 (ss+censored)
+df %>% filter(C_tilde==0,C==1) %>% nrow()  # the number of censored units
+df %>% filter(C_tilde==1,C==1) %>% nrow()  # the number of supersurvivors
+
+df %>% group_by(G) %>% summarise(n()) # the number of units in each group
+
+cor(df$V, df$e)  # corr between surv. ftn. err. and observed Y
 
 # Plot average Y grouped by G
-# ggplot(df, aes(x = t, y = Y, group = factor(G), color = factor(G))) +
-#   stat_summary(fun = mean, geom = 'line') +
-#   labs(title = "Time Trend of Y by Group G",
-#        x = "Time (t)",
-#        y = "Y",
-#        color = "Group (G)")
+ggplot(df, aes(x = t, y = Y, group = factor(G), color = factor(G))) +
+  stat_summary(fun = mean, geom = 'line') +
+  labs(title = "Time Trend of Y by Group G",
+       x = "Time (t)",
+       y = "Y",
+       color = "Group (G)")
 
 ###### Supersurvivor regression ######
 source('analysis/code/supersurvivor.R')
