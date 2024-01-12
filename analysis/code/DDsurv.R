@@ -4,10 +4,12 @@
 # Last Edit: Dec-03-2023
 # Description: haha
 
+# potential input =====================
 time_variable <- 't'
 unit_variable <- 'unit'
 group_variable <- 'G'
 
+# generate dataframe for DD =====================
 df_DD <- df
 df_DD['t_'] <- df_DD[time_variable]
 df_DD['i_'] <- df_DD[unit_variable]
@@ -18,13 +20,14 @@ t_max <- df_DD['t_'] %>% max()  # we can get ATT from (t_min+1)~t_max
 G_max <- df_DD[df_DD['G_']<100, 'G_'] %>% max()
 G_censored <- df_DD['G'] %>% max()
 
+# dataframe that contains all possible ATTs
 results <- data.frame(G = rep(c(1:G_max), each=t_max),
                       t = rep(c(1:t_max), times=G_max))
 results <- results %>% filter(G > t_min, t >= G)
 results$ATT <- NA
 results$ATT_reweight <- NA
 
-# ATT(g,t)
+# DD =====================
 for (i in 1:nrow(results)) {
   g__ <- results[i, group_variable]
   t__ <- results[i, time_variable]
@@ -34,7 +37,7 @@ for (i in 1:nrow(results)) {
   # m(g,t|X)
   C_group <- C_group %>%
     mutate(Yt = ifelse(t_==t__,Y,NA),
-           Ygm1 = ifelse(t_==g__-1,Y,NA)) %>%
+           Ygm1 = ifelse(t_==g__-1,Y,NA)) %>%  # gm1: g minus 1
     group_by(i_) %>%
     mutate(dY = sum(Yt, na.rm=T) - sum(Ygm1, na.rm=T)) %>%
     ungroup() %>%
