@@ -15,12 +15,9 @@ df <- read_csv('analysis/temp/simDGP.csv')
 # histrogram of G other than 10000
 hist(df$G[df$G != 10000])
 
-
-df %>% filter(C==1) %>% nrow()  # the number of C==1 (ss+censored)
+df %>% group_by(G) %>% summarise(n()) # the number of units in each group
 df %>% filter(C_tilde==0,C==1) %>% nrow()  # the number of censored units
 df %>% filter(C_tilde==1,C==1) %>% nrow()  # the number of supersurvivors
-
-df %>% group_by(G) %>% summarise(n()) # the number of units in each group
 
 cor(df$V, df$e)  # corr between surv. ftn. err. and observed Y
 
@@ -42,3 +39,12 @@ df %>% filter(G==10000) %>% group_by(C_tilde) %>% summarise(mean(phat))
 
 ###### DiD using reweighting #######
 source('analysis/code/DDsurv.R')
+library(xtable)
+results <- results %>%
+  mutate(TE = ifelse(G==t, 1, 0),
+         TE = ifelse(G==t-1, 0.8, TE),
+         TE = ifelse(G==t-2, 0.6, TE)) %>%
+  select(G,t,TE,ATT,ATT_reweight)
+
+# print the xtable result without row number
+print(xtable(results), include.rownames = FALSE)
