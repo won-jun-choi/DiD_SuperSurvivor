@@ -9,8 +9,8 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse, here)
 
 ###### DGP ######
-source('analysis/code/simDGP.R')  # generate simDGP.csv
-df <- read_csv('analysis/temp/simDGP.csv')
+source('analysis/code/simDGP1.R')  # generate simDGP.csv
+df <- read_csv('analysis/temp/simDGP1.csv')
 
 # histrogram of G other than 10000
 hist(df$G[df$G != 10000])
@@ -19,8 +19,6 @@ df %>% group_by(G) %>% summarise(n()) # the number of units in each group
 df %>% filter(C_tilde==0,C==1) %>% nrow()  # the number of censored units
 df %>% filter(C_tilde==1,C==1) %>% nrow()  # the number of supersurvivors
 
-cor(df$V, df$e)  # corr between surv. ftn. err. and observed Y
-
 # Plot average Y grouped by G
 ggplot(df, aes(x = t, y = Y, group = factor(G), color = factor(G))) +
   stat_summary(fun = mean, geom = 'line') +
@@ -28,6 +26,8 @@ ggplot(df, aes(x = t, y = Y, group = factor(G), color = factor(G))) +
        x = "Time (t)",
        y = "Y",
        color = "Group (G)")
+# save the figure
+ggsave('analysis/output/fig_DGP1.png', width = 6, height = 4)
 
 ###### Supersurvivor regression ######
 source('analysis/code/supersurvivor.R')
@@ -48,3 +48,6 @@ results <- results %>%
 
 # print the xtable result without row number
 print(xtable(results), include.rownames = FALSE)
+
+###### DiD using C_tilde (infeasible) ######
+source('analysis/code/InfeasibleDD.R')
