@@ -43,12 +43,12 @@ library(cuRe)
 #          Y = Y0*(G>t) + Y1*(G<=t))
 
 #generate time_to_treat
-t_max <- 5
+t_max <- 10
 
-df$time_to_treat<-df$G
+df$time_to_treat<-df$G-1
 df$time_to_treat[df$time_to_treat > t_max] <- t_max
-# df$time_to_treat<-df$G_star
-# df$time_to_treat[df$time_to_treat > 100] <- 100
+#df$time_to_treat<-df$G_star
+#df$time_to_treat[df$time_to_treat > 100] <- 100
 df<-df%>% mutate(C = ifelse(G_star>100,1,0))
 
 #generate status
@@ -66,4 +66,4 @@ df$phat<-exp(gammahat[1]+gammahat[2]*df$x1+gammahat[3]*df$x2)/(1+exp(gammahat[1]
 
 # to compare with p_uncured:
 df1 <- df %>% select(C, C_tilde, phat, p_cured)
-
+df1<-df1 %>% mutate(dif=phat-p_cured)

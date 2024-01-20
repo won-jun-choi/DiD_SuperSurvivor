@@ -36,7 +36,7 @@ lambda <- c(1, 2, 3)  # parameters for the survival function
 df <- df %>% 
   group_by(unit) %>%
   mutate(u = runif(1),
-         V = rnorm(1), # survival function error
+         V = rnorm(n=1), # survival function error
          G_star = exp(-lambda[1] - lambda[2]*z1 - lambda[3]*z2 - V) * (-log(u)),
          G_star = ifelse(C_tilde==1,10000-2,G_star),  # -2 just to make it look better
          G_star = floor(G_star+2),  # shift to right so that the first adoption t==2
@@ -62,18 +62,18 @@ TE <- c(1, 0.8, 0.6)  # time varying treatment effect
 df <- df %>% 
   mutate(tau = t-G) %>% # time varying treatment
   mutate(delta_gt = ifelse(G_star>t_max & G_star <= 10, 3*sin(2*t), 0)) %>% # group specific trend
-  mutate(e = rnorm(1)) %>% # Y0 error
+  mutate(e = rnorm(n=1)) %>% # Y0 error
   mutate(Y0 = x1*beta[1] + x2*beta[2] + 1*t + delta_gt + e) %>%
   mutate(Y1 = Y0 + TE[1]*(tau==0) + TE[2]*(tau==1) + TE[3]*(tau==2)) %>%
   mutate(Y = Y0*(G>t) + Y1*(G<=t))
 
 # time trend by G
-ggplot(df, aes(x = t, y = Y, group = factor(G), color = factor(G))) +
-  stat_summary(fun = mean, geom = 'line') +
-  labs(title = "Time Trend of Y by Group G",
-       x = "Time (t)",
-       y = "Y",
-       color = "Group (G)")
+# ggplot(df, aes(x = t, y = Y, group = factor(G), color = factor(G))) +
+#   stat_summary(fun = mean, geom = 'line') +
+#   labs(title = "Time Trend of Y by Group G",
+#        x = "Time (t)",
+#        y = "Y",
+#        color = "Group (G)")
 
 # Save data as csv in temp folder
 write_csv(df, "analysis/temp/simDGP1.csv")
