@@ -62,6 +62,12 @@ for (i in 1:nrow(results)) {
   results[i,'ATT_reweight'] <- Em1 - weighted.mean(T_group$Em0, T_group$phat)
 }
 
+DDsurv <- results
+
+rm(list=c('time_variable','unit_variable','group_variable',
+          't_min','t_max','G_max','G_censored','i','g__','t__',
+          'T_group','C_group','m0','Em1','Em0','i_','g_','t_','results'))
+
 # loopppp
 # t__ <- 2
 # g__ <- 2

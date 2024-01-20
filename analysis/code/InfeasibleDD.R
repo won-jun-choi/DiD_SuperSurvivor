@@ -59,3 +59,4 @@ for (i in 1:nrow(results_inf)) {
   # ATT(g,t)
   results_inf[i,'ATT'] <- Em1 - Em0
 }
+results_inf <- results_inf %>% rename(ATT_inf = ATT)
