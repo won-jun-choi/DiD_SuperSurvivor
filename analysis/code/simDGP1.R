@@ -5,15 +5,15 @@
 # Description: DGP for Monte Carlo simulations
 
 n <- 1000
-t_max <- 5
+t_max <- 10
 # generate a balanced panel with n units and t_max time periods
 df <- tibble(unit = rep(c(1:n), each = t_max),
              t = rep(c(1:t_max), times = n),
              ones = 1)
 
 # generate regressors X: supersurvivor logit, Z: survival function
-df <- df %>% mutate(x1 = rep(runif(n)*(-2) + 1, each = t_max),
-                    x2 = rep(runif(n)*(-2) + 1, each = t_max),
+df <- df %>% mutate(x1 = rep(runif(n)*(-20) + 10, each = t_max),
+                    x2 = rep(runif(n)*(-20) + 10, each = t_max),
                     z1 = x1,
                     z2 = x2)
 
@@ -59,11 +59,11 @@ df %>% filter(C==1) %>% summarise(n=sum(C_tilde))  # proportion of supersur
 # generate Y0 and Y1
 beta <- c(1,2)
 TE <- c(1, 0.8, 0.6)  # time varying treatment effect
+df$e <- stats::rnorm(n=n*t_max, mean=0, sd=0.5)  # Y0 error
 df <- df %>% 
   mutate(tau = t-G) %>% # time varying treatment
   mutate(delta_gt = ifelse(G_star>t_max & G_star <= 10, 3*sin(2*t), 0)) %>% # group specific trend
-  mutate(e = rnorm(n=1)) %>% # Y0 error
-  mutate(Y0 = x1*beta[1] + x2*beta[2] + 1*t + delta_gt + e) %>%
+  mutate(Y0 = x1*beta[1] + x2*beta[2] + 1*t + delta_gt + e+V) %>%
   mutate(Y1 = Y0 + TE[1]*(tau==0) + TE[2]*(tau==1) + TE[3]*(tau==2)) %>%
   mutate(Y = Y0*(G>t) + Y1*(G<=t))
 

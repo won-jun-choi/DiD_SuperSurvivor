@@ -43,13 +43,12 @@ library(cuRe)
 #          Y = Y0*(G>t) + Y1*(G<=t))
 
 #generate time_to_treat
-t_max <- 5
+t_max <- 10
 
 df$time_to_treat<-df$G
 df$time_to_treat[df$time_to_treat > t_max] <- t_max
 # df$time_to_treat<-df$G_star
 # df$time_to_treat[df$time_to_treat > 100] <- 100
-df<-df%>% mutate(C = ifelse(G_star>100,1,0))
 
 #generate status
 df$status <- ifelse(df$C == 0, 1, ifelse(df$C == 1, 0, NA))

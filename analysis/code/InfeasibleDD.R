@@ -31,7 +31,7 @@ for (i in 1:nrow(results_inf)) {
   g__ <- results_inf[i, group_variable]
   t__ <- results_inf[i, time_variable]
   T_group <- df_DD %>% filter(G_==g__)
-  C_group <- df_DD %>% filter(C==1)
+  C_group <- df_DD %>% filter(C_tilde==1)
   
   # m(g,t|X)
   C_group <- C_group %>%
