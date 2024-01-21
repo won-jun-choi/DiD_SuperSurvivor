@@ -63,7 +63,7 @@ for (i in 1:nrow(results)) {
   
   # ATT(g,t)
   results[i,'ATT'] <- Em1 - Em0
-  results[i,'ATT_reweight'] <- Em1 - weighted.mean(T_group$Em0, 1-T_group$phat)
+  results[i,'ATT_reweight'] <- Em1 - weighted.mean(T_group$Em0, T_group$phat)
   results[i,'ATT_reweight2'] <- Em1 - Em0_reweight
 }
 

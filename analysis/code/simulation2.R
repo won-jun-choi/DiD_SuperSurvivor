@@ -6,7 +6,7 @@
 
 rm(list=ls())
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, here)
+pacman::p_load(tidyverse, here, xtable)
 
 ###### DGP ######
 source('analysis/code/simDGP2.R')  # generate simDGP2.csv in temp folder
@@ -55,3 +55,4 @@ DDsurv <- DDsurv %>%
 print(xtable(DDsurv), include.rownames = FALSE)
 
 df_censored <- df %>% filter(C==1) %>% select(unit,t,C,C_tilde,p_cured,phat)
+
