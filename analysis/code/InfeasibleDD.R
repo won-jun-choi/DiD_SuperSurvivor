@@ -60,3 +60,8 @@ for (i in 1:nrow(results_inf)) {
   results_inf[i,'ATT'] <- Em1 - Em0
 }
 results_inf <- results_inf %>% rename(ATT_inf = ATT)
+
+rm(list=c('time_variable','unit_variable','group_variable',
+          't_min','t_max','G_max','G_censored','i','g__','t__',
+          'T_group','C_group','m0', 'm0_reweight', 'Em1','Em0', 'Em0_reweight',
+          'results','df_DD'))

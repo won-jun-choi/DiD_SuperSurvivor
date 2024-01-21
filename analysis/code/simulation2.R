@@ -42,14 +42,14 @@ DDsurv <- DDsurv %>%
          TE = ifelse(G==t-3, 0.8, TE),
          TE = ifelse(G==t-4, 0.6, TE),
          TE = ifelse(G==t-5, 0.3, TE)) %>%
-  select(G,t,TE,ATT,ATT_reweight)
+  select(G,t,TE,ATT,ATT_reweight,ATT_reweight2)
 
 # add DiD using C_tilde (infeasible)
 source('analysis/code/InfeasibleDD.R')
 # merge DDsurv and results_inf using G and t as keys
 DDsurv <- DDsurv %>%
   left_join(results_inf, by=c('G','t')) %>%
-  select(G,t,TE,ATT,ATT_reweight,ATT_inf)
+  select(G,t,TE,ATT,ATT_reweight,ATT_reweight2,ATT_inf)
 
 # print the xtable result without row number
 print(xtable(DDsurv), include.rownames = FALSE)
