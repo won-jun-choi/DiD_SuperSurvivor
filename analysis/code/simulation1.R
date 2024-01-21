@@ -53,3 +53,11 @@ DDsurv <- DDsurv %>%
 
 # print the xtable result without row number
 print(xtable(DDsurv), include.rownames = FALSE)
+
+df$p_cured %>% mean()
+df$phat %>% mean()
+
+mean((df$p_cured - df$phat)^2)*10000
+
+df %>% group_by(C,C_tilde) %>% summarise(mean(phat))
+df_censored <- df %>% filter(G==10000) %>% select(unit, t, p_cured, phat)

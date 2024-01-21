@@ -53,3 +53,5 @@ DDsurv <- DDsurv %>%
 
 # print the xtable result without row number
 print(xtable(DDsurv), include.rownames = FALSE)
+
+df_censored <- df %>% filter(C==1) %>% select(unit,t,C,C_tilde,p_cured,phat)
