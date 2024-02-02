@@ -1,12 +1,12 @@
 # Meta =====================
-# Title: Simulations
-# Author: Wonjun, Juhyun, Sanghee
-# Last Edit/Editor: Dec-16-2023 / Wonjun
-# Description: Main file to run Monte Carlo simulations.
+# Title: Simulation1
+# Author: Wonjun
+# Last Edit/Editor: Jan-19-2024 / Wonjun
+# Description: MC Simulation 1
 
 rm(list=ls())
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, here)
+pacman::p_load(tidyverse, here, xtable)
 
 ###### DGP ######
 source('analysis/code/simDGP1.R')  # generate simDGP.csv
@@ -26,28 +26,38 @@ ggplot(df, aes(x = t, y = Y, group = factor(G), color = factor(G))) +
        x = "Time (t)",
        y = "Y",
        color = "Group (G)")
-# save the figure
+
+# save the plot
 ggsave('analysis/output/fig_DGP1.png', width = 6, height = 4)
 
 ###### Supersurvivor regression ######
 source('analysis/code/supersurvivor.R')
 
-# show df of G=10000 (supersurvivors)
-View(df %>% filter(G==10000) %>% select(i,G_star,phat))
-
-df %>% filter(G==10000) %>% group_by(C_tilde) %>% summarise(mean(phat))
-
 ###### DiD using reweighting #######
 source('analysis/code/DDsurv.R')
-library(xtable)
-results <- results %>%
+
+###### print the results ###### 
+# add true TE to the results
+DDsurv <- DDsurv %>%
   mutate(TE = ifelse(G==t, 1, 0),
          TE = ifelse(G==t-1, 0.8, TE),
          TE = ifelse(G==t-2, 0.6, TE)) %>%
-  select(G,t,TE,ATT,ATT_reweight)
+  select(G,t,TE,ATT,ATT_reweight,ATT_reweight2)
+
+# add DiD using C_tilde (infeasible)
+source('analysis/code/InfeasibleDD.R')
+# merge DDsurv and results_inf using G and t as keys
+DDsurv <- DDsurv %>%
+  left_join(results_inf, by=c('G','t')) %>%
+  select(G,t,TE,ATT,ATT_reweight,ATT_reweight2,ATT_inf)
 
 # print the xtable result without row number
-print(xtable(results), include.rownames = FALSE)
+print(xtable(DDsurv), include.rownames = FALSE)
 
-###### DiD using C_tilde (infeasible) ######
-source('analysis/code/InfeasibleDD.R')
+df$p_cured %>% mean()
+df$phat %>% mean()
+
+mean((df$p_cured - df$phat)^2)*10000
+
+df %>% group_by(C,C_tilde) %>% summarise(mean(phat))
+df_censored <- df %>% filter(G==10000) %>% select(unit, t, p_cured, phat)

@@ -31,7 +31,7 @@ for (i in 1:nrow(results_inf)) {
   g__ <- results_inf[i, group_variable]
   t__ <- results_inf[i, time_variable]
   T_group <- df_DD %>% filter(G_==g__)
-  C_group <- df_DD %>% filter(C==1)
+  C_group <- df_DD %>% filter(C_tilde==1)
   
   # m(g,t|X)
   C_group <- C_group %>%
@@ -59,3 +59,9 @@ for (i in 1:nrow(results_inf)) {
   # ATT(g,t)
   results_inf[i,'ATT'] <- Em1 - Em0
 }
+results_inf <- results_inf %>% rename(ATT_inf = ATT)
+
+rm(list=c('time_variable','unit_variable','group_variable',
+          't_min','t_max','G_max','G_censored','i','g__','t__',
+          'T_group','C_group','m0', 'm0_reweight', 'Em1','Em0', 'Em0_reweight',
+          'results','df_DD'))

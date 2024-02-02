@@ -1,7 +1,7 @@
 # Meta =====================
 # Title: simulation DGP
 # Author: Wonjun
-# Last Edit/Editor: Jan-18-2024 / Wonjun
+# Last Edit/Editor: Jan-21-2024 / Wonjun
 # Description: DGP for Monte Carlo simulations
 
 n <- 1000
@@ -14,6 +14,7 @@ df <- tibble(unit = rep(c(1:n), each = t_max),
 # generate regressors X: supersurvivor logit, Z: survival function
 df <- df %>% mutate(x1 = rep(runif(n)*(-2) + 1, each = t_max),
                     x2 = rep(runif(n)*(-2) + 1, each = t_max),
+                    x3 = rep(rnorm(n), each = t_max),
                     z1 = x1,
                     z2 = x2)
 
@@ -36,7 +37,7 @@ lambda <- c(1, 2, 3)  # parameters for the survival function
 df <- df %>% 
   group_by(unit) %>%
   mutate(u = runif(1),
-         V = rnorm(1), # survival function error
+         V = rnorm(n=1), # survival function error
          G_star = exp(-lambda[1] - lambda[2]*z1 - lambda[3]*z2 - V) * (-log(u)),
          G_star = ifelse(C_tilde==1,10000-2,G_star),  # -2 just to make it look better
          G_star = floor(G_star+2),  # shift to right so that the first adoption t==2
@@ -57,23 +58,23 @@ num/denom  # kind of high...
 df %>% filter(C==1) %>% summarise(n=sum(C_tilde))  # proportion of supersur
 
 # generate Y0 and Y1
-beta <- c(1,2)
+beta <- c(3,4,5)
 TE <- c(1, 0.8, 0.6)  # time varying treatment effect
+df$e <- stats::rnorm(n=n*t_max, mean=0, sd=1)  # Y0 error
 df <- df %>% 
   mutate(tau = t-G) %>% # time varying treatment
   mutate(delta_gt = ifelse(G_star>t_max & G_star <= 10, 3*sin(2*t), 0)) %>% # group specific trend
-  mutate(e = rnorm(1)) %>% # Y0 error
-  mutate(Y0 = x1*beta[1] + x2*beta[2] + 1*t + delta_gt + e) %>%
+  mutate(Y0 = x1*beta[1] + x2*beta[2] + x3*beta[3] + 1*t + delta_gt + e+V) %>%
   mutate(Y1 = Y0 + TE[1]*(tau==0) + TE[2]*(tau==1) + TE[3]*(tau==2)) %>%
   mutate(Y = Y0*(G>t) + Y1*(G<=t))
 
 # time trend by G
-ggplot(df, aes(x = t, y = Y, group = factor(G), color = factor(G))) +
-  stat_summary(fun = mean, geom = 'line') +
-  labs(title = "Time Trend of Y by Group G",
-       x = "Time (t)",
-       y = "Y",
-       color = "Group (G)")
+# ggplot(df, aes(x = t, y = Y, group = factor(G), color = factor(G))) +
+#   stat_summary(fun = mean, geom = 'line') +
+#   labs(title = "Time Trend of Y by Group G",
+#        x = "Time (t)",
+#        y = "Y",
+#        color = "Group (G)")
 
 # Save data as csv in temp folder
 write_csv(df, "analysis/temp/simDGP1.csv")
