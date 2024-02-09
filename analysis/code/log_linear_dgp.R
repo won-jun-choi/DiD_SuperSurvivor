@@ -5,9 +5,9 @@
 library(dplyr)
 library(MASS)
 
-n<-1000
-t_max<-10
-gamma <- c(2, 1, 0.5,1,2)  # params for supersurvivor logit
+n<-2000
+t_max<-20
+gamma <- c(1, 1, 0.5,1,2)  # params for supersurvivor logit
 lambda <- c( 1, 2,3)  # parmas for duration
 df <- tibble(unit = rep(c(1:n), each = t_max),
              t = rep(c(1:t_max), times = n),
@@ -27,8 +27,9 @@ df <- tibble(unit = rep(c(1:n), each = t_max),
     z2 = x2
   ) %>%
   group_by(unit) %>%
+  mutate(U = rlogis(1,0,1)) %>%
   mutate(p_uncured = exp(gamma[1]+gamma[2]*x1+gamma[3]*x2+gamma[4]*x3+gamma[5]*x4)/(1+exp(gamma[1]+gamma[2]*x1+gamma[3]*x2+gamma[4]*x3+gamma[5]*x4)),
-         C_tilde = ifelse(runif(1)<p_uncured,0,1)  
+         C_tilde = ifelse(U + gamma[1]+gamma[2]*x1+gamma[3]*x2+gamma[4]*x3+gamma[5]*x4 > 0,0,1)  
          ) 
 
 # number of supersurvivor: 
@@ -49,7 +50,7 @@ df<-df%>%
   mutate(G_star=floor(y),
          G_star=G_star+2,
          G_star=ifelse(C_tilde==1,10000,G_star),
-         G = ifelse(G_star>t_max,10000,G_star),
+         G = ifelse(G_star>t_max,t_max,G_star),
         C = ifelse(G_star>t_max,0,1),  #Not censored indicator
          )
 
@@ -85,13 +86,24 @@ log_likelihood <- function(parameters, c, y, x1, x2, x3, x4, z1, z2) {
 
 
 # Initial guess for parameters
-initial_guess <- c(rep(1, 7), 0, 1,0)  # Initial guess for lambda1, lambda2, ..., sigma
+initial_guess <- c(rep(1, 7), 2, 3,4)  # Initial guess for lambda1, lambda2, ..., sigma
+initial_guess <- c(1,2,2,1,0.5,1,2,0,1,3) # True value
 
 # Optimization
 result <- optim(par = initial_guess, fn = log_likelihood, c = df$C, y = df$G,
                 x1 = df$x1, x2 = df$x2, x3 = df$x3, x4 = df$x4,
-                z1 = df$z1, z2 = df$z2)
+                z1 = df$z1, z2 = df$z2, method="Nelder-Mead")
 
 # Estimated parameters
 estimated_params <- result$par
 print(estimated_params)
+
+# gamma1_ <- estimated_params[3]
+# gamma2_ <- estimated_params[4]
+# gamma3_ <- estimated_params[5]
+# gamma4_ <- estimated_params[6]
+# gamma5_ <- estimated_params[7]
+# 
+# df$phat <- exp(gamma1_ + gamma2_ * df$x1 + gamma3_ * df$x2 + gamma4_ * df$x3 + gamma5_ * df$x4) / (1 + exp(gamma1_ + gamma2_ * df$x1 + gamma3_ * df$x2 + gamma4_ * df$x3 + gamma5_ * df$x4))
+# 
+# df %>% select(p_uncured, phat) %>% View()

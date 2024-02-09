@@ -5,8 +5,9 @@
 # Description: MC Simulation 1
 
 rm(list=ls())
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, here, xtable)
+library(tidyverse)
+library(here)
+library(xtable)
 
 ###### DGP ######
 source('analysis/code/simDGP1.R')  # generate simDGP.csv
