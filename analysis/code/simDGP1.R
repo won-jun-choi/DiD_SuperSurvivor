@@ -77,6 +77,6 @@ df <- df %>%
 write_csv(df, "analysis/temp/simDGP1.csv")
 
 # clear local variables
-rm(list=c('n','t_max','gamma','lambda','TE','df','beta','num','denom'))
+rm(list=c('n','t_max','gamma','lambda','df','beta','num','denom'))
 
 

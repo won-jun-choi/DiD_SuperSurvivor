@@ -1,7 +1,7 @@
 # Meta =====================
 # Title: Simulation1
 # Author: Wonjun
-# Last Edit/Editor: Jan-19-2024 / Wonjun
+# Last Edit/Editor: Feb-15-2024 / Wonjun
 # Description: MC Simulation 1
 
 rm(list=ls())
@@ -10,7 +10,7 @@ library(here)
 library(xtable)
 
 ###### DGP ######
-source('analysis/code/simDGP1.R')  # generate simDGP.csv
+source('analysis/code/simDGP1.R')  # generate simDGP.csv in temp folder.
 df <- read_csv('analysis/temp/simDGP1.csv')
 
 # histrogram of G other than 10000
@@ -36,6 +36,7 @@ source('analysis/code/supersurvivor.R')
 
 ###### DiD using reweighting #######
 source('analysis/code/DDsurv.R')
+
 
 ###### print the results ###### 
 # add true TE to the results
