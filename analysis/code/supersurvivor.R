@@ -7,63 +7,153 @@
 # Description: Re-write the script as a function.
 
 # Load packages
-library(cuRe)
-
 my_SuperSurvivor <- function(data,
                              unit_variable,
                              time_variable,
                              duration_variable,
-                             uncensored_indicator,
+                             censored_indicator,
                              logit_regressors,
                              survival_regressors,
-                             survival_function_type){
+                             survival_function_type,
+                             optimization_method='Nelder-Mead'){
   # unit_variable: str; variable name for unit (in ours, i)
   # time_variable: str; variable name for time (in ours, t)
   # duration_variable: str; variable name for duration (in ours, G)
   # logit_regressors: list(str); list of variable names for logit (x)
   # survival_regressors: list(str); list of variable names for survival (z)
   # survival_function_type: 'Weibull', 'LogNormal'
-  t_max <- data %>% pull({{time_variable}}) %>% max()
+  
+  # t_max <- data %>% pull({{time_variable}}) %>% max()
+  ones <- rep(1, nrow(data))
+  X <- data[,logit_regressors] %>% as.matrix()
+  Z <- data[,survival_regressors] %>% as.matrix()
+  G <- data %>% pull({{duration_variable}}) %>% as.numeric()
+  C <- data %>% pull({{censored_indicator}}) %>% as.numeric()
   
   if (survival_function_type == 'Weibull') {
-    # generate time_to_treat and status for cuRe package
-    data['time_to_treat'] <- data %>% pull({{duration_variable}})
-    data['status'] <- ifelse(data %>% pull({{uncensored_indicator}}) == 0,
-                             1,
-                             ifelse(data %>% 
-                                      pull({{uncensored_indicator}}) == 1, 
-                                    0, NA))
-    # From c('x1','x2') how can I make x1+x2 and define it as formula
-    logit_formula <- as.formula(paste("Surv(time_to_treat,status) ~", paste(survival_regressors,collapse = '+')))
-    surv_formula <- as.formula(paste(paste(logit_regressors,collapse = '+'),"+1)"))
-    super_survivor_logit <- fit.cure.model(logit_formula,
-                                           formula.surv = list(~surv_formula),
-                                           data = data,
-                                           type = 'mixture',
-                                           bhazard = NULL,
-                                           dist = 'weibull',
-                                           link = 'logit')
-    gammahat <- super_survivor_logit$coefs[['1']]
-    # generate X which is a matrix of 1 and logit_regressors
-    X <- cbind(1, data %>% pull({{logit_regressors}}))
-    phat <- exp(gammahat %*% X) / (1 + exp(gammahat %*% X))
+    # hahaha
   } else if (survival_function_type == 'LogNormal') {
-    # Do MLE using the code in log_linear_dgp
+    # log-likelihood function for cured model
+    # L(\theta;X,Z) = \Prod_{i=1}^n [p_uncured * f(dur|Z)]^{uncensored} * \Prod_{i=1}^n [p_cured + p_uncured*S(dur|Z)]^{censored}
+    # Thus, l(\tehta;X,Z) = \Sum_{i=1}^n uncensored * [log(p_uncured) + log(f)] + \Sum_{i=1}^n censored[log(p_cured + p_uncured*S)]
+    loglik <- function(theta) {
+      # ones <- rep(1, nrow(data))
+      
+      gamma <- theta[1:(length(logit_regressors)+1)]
+      # X <- data[,logit_regressors] %>% as.matrix()
+      Xg <- cbind(ones,X) %*% t(t(gamma))
+      p_cured <- exp(Xg)/(1+exp(Xg))
+      p_uncured <- 1 - p_cured
+      
+      lambda <- theta[(length(logit_regressors)+2):(length(theta)-1)]
+      s <- theta[length(theta)]
+      # Z <- data[,survival_regressors] %>% as.matrix()
+      Zl <- cbind(ones,Z) %*% t(t(lambda))
+      f <- dnorm((log(G)-Zl)/s)/(G*s) # density
+      S <- 1 - pnorm((log(G)-Zl)/s)
+      
+      # C <- data %>% pull(censored_indicator) %>% as.numeric()
+      ret <- (1-C) * (log(p_uncured) + log(f)) + C * (log(p_cured + p_uncured*S))
+      return(-sum(ret)) # for minimization
+      }
+    } else if (survival_function_type == 'LogNormal_discrete') {
+    # In discrete duration case, the density can be replaced by a probability mass
+    
+    # log-likelihood function
+    # L(\theta;X,Z) = \Prod_{i=1}^n [p_uncured * f(dur|Z)]^{uncensored} * \Prod_{i=1}^n [p_cured + p_uncured*S(dur|Z)]^{censored}
+    # Thus, l(\tehta;X,Z) = \Sum_{i=1}^n uncensored * [log(p_uncured) + log(f)] + \Sum_{i=1}^n censored[log(p_cured + p_uncured*S)]
+    loglik <- function(theta) {
+      # ones <- rep(1, nrow(data))
+      
+      gamma <- theta[1:(length(logit_regressors)+1)]
+      # X <- data[,logit_regressors] %>% as.matrix()
+      Xg <- cbind(ones,X) %*% t(t(gamma))
+      p_cured <- exp(Xg)/(1+exp(Xg))
+      p_uncured <- 1 - p_cured
+      
+      lambda <- theta[(length(logit_regressors)+2):(length(theta)-1)]
+      s <- theta[length(theta)]
+      # Z <- data[,survival_regressors] %>% as.matrix()
+      Zl <- cbind(ones,Z) %*% t(t(lambda))
+      f <- pnorm((log(G+1)-Zl)/s) - pnorm((log(G)-Zl)/s) # point mass instead of density
+      S <- 1 - pnorm((log(G)-Zl)/s)
+      
+      # C <- data %>% pull(censored_indicator) %>% as.numeric()
+      ret <- (1-C) * (log(p_uncured) + log(f)) + C * (log(p_cured + p_uncured*S))
+      return(-sum(ret)) # for minimization
+    }
+  } else {
+    stop('survival_function_type should be one of "Weibull", "LogNormal", "LogNormal_discrete"')
   }
+  
+  # optimization
+  initial_value = c(-1,2,0,0,0,-1,2,0,0,2)
+  # initial_value = c(-1,2,-2,2,3, -1,2,-3,4, 1)  # sigma_V
+  res <- optim(par = initial_value,
+                 fn = loglik,
+                 method = optimization_method)
+  gamma_hat <- res$par[1:(length(logit_regressors)+1)]
+  lambda_hat <- res$par[(length(logit_regressors)+2):(length(res$par)-1)]
+  print('gamma_hat: ')
+  print(gamma_hat)
+  print('lambda_hat: ')
+  print(lambda_hat)
+  num <- exp(cbind(ones,X) %*% t(t(gamma_hat)))
+  denom <- 1+exp(cbind(ones,X) %*% t(t(gamma_hat)))
+  phat <- num/denom
+  
   return(phat)
 }
 
-my_SuperSurvivor(data = df,
-                 unit_variable = i,
-                 time_variable = t,
-                 duration_variable = G,
-                 uncensored_indicator = C,
+res = my_SuperSurvivor(data = df,
+                 unit_variable = 'i',
+                 time_variable = 't',
+                 duration_variable = 'G',
+                 censored_indicator = 'C',
                  logit_regressors = c('x1','x2','x3','x4'),
                  survival_regressors = c('z1','z2','z3'),
-                 survival_function_type = 'Weibull')
+                 survival_function_type = 'LogNormal_discrete',
+                 optimization_method='Nelder-Mead')
+# 
+# df$phat <- res
+# df %>% select(phat,p_cured) %>% View()
 
-as.formula(paste(c('z1','z2','z3'),collapse = '+')) # z1+z2+z3
+length(res$par)
 
+# input
+# data <- df
+# unit_variable = 'i'
+# time_variable = 't'
+# duration_variable = 'G'
+# censored_indicator = 'C'
+# logit_regressors = c('x1','x2','x3','x4')
+# survival_regressors = c('z1','z2','z3')
+# survival_function_type = 'LogNormal_discrete'
+# theta = c(1,0,0,0,0,1,0,0,0,3) # gamma (logit), lambda (survival), s_v (survival)
+
+# # loglikelihood function
+# ones <- rep(1, nrow(data))
+# 
+# gamma <- theta[1:(length(logit_regressors)+1)]
+# X <- data[,logit_regressors] %>% as.matrix()
+# Xg <- cbind(ones,X) %*% t(t(gamma))
+# p_cured <- exp(Xg)/(1+exp(Xg))
+# p_uncured <- 1 - p_cured
+# 
+# lambda <- theta[(length(logit_regressors)+2):(length(theta)-1)]
+# s <- theta[length(theta)]
+# Z <- data[,survival_regressors] %>% as.matrix()
+# Zl <- cbind(ones,Z) %*% t(t(lambda))
+# f <- pnorm((log(G+1)-Zl)/s) - pnorm((log(G)-Zl)/s) # point mass instead of density
+# S <- 1 - pnorm((log(G)-Zl)/s)
+# 
+# C <- data %>% pull(censored_indicator) %>% as.numeric()
+# 
+# ret <- (1-C) * (log(p_uncured) + log(f)) + C * (log(p_cured + p_uncured*S))
+# sum(ret, rm.na=T)
+
+
+######## old code ########
 df$time_to_treat<-df$G
 df$time_to_treat[df$time_to_treat > t_max] <- t_max # this is unnecessary
 

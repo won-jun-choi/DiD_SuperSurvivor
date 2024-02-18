@@ -22,6 +22,8 @@ df <- df %>% mutate(x1 = rep(runif(n)*(-2) + 1, each = t_max),
 
 # supersurvivor logit
 gamma <- c(-1, 2, -2, 2, 3)  # supersurvivor logit parameters (x0,x1,x2,x3)
+print('gamma: ')
+print(gamma)
 df <- df %>% 
   group_by(unit) %>%
   mutate(U = rlogis(1,0,1)) %>%
@@ -35,6 +37,8 @@ df <- df %>%
 
 # Weibull survival function
 lambda <- c(-1, 2, -3, 4)  # parameters (z0~z3)
+print('lambda: ')
+print(lambda)
 df <- df %>% 
   group_by(unit) %>%
   mutate(u = runif(1)) %>% # uniform rv for probability inversion
@@ -62,7 +66,7 @@ df <- df %>%
   mutate(tau = t-G) %>% # for time varying treatment
   mutate(delta_gt = ifelse(G_star>t_max & G_star <= 10, 3*sin(2*t), 0)) %>% # group specific trend
   mutate(Y0 = x1*beta[1] + x2*beta[2] + x3*beta[3] + 1*t + delta_gt + e+V) %>%
-  mutate(Y1 = Y0 + TE[1]*(tau==0) + TE[2]*(tau==1) + TE[3]*(tau==2)) %>%
+  mutate(Y1 = Y0 + 1) %>%
   mutate(Y = Y0*(G>t) + Y1*(G<=t))
 
 # time trend by G

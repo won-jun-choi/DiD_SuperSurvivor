@@ -33,10 +33,24 @@ ggsave('analysis/output/fig_DGP1.png', width = 6, height = 4)
 
 ###### Supersurvivor regression ######
 source('analysis/code/supersurvivor.R')
+df$phat <- my_SuperSurvivor(data = df,
+                            unit_variable = 'i',
+                            time_variable = 't',
+                            duration_variable = 'G',
+                            censored_indicator = 'C',
+                            logit_regressors = c('x1','x2','x3','x4'),
+                            survival_regressors = c('z1','z2','z3'),
+                            survival_function_type = 'LogNormal',
+                            optimization_method = 'Nelder-Mead')
 
+df %>% select(p_cured,phat, C_tilde) %>% View()
 ###### DiD using reweighting #######
 source('analysis/code/DDsurv.R')
 
+# plot log-normal survival function
+t = seq(0, 100, length.out = 1000)
+S = 1 - pnorm(log(t), mean = 0, sd = 1)
+plot(t, S, type = 'l', xlab = 't', ylab = 'S(t)', main = 'Log-normal survival function')
 
 ###### print the results ###### 
 # add true TE to the results
