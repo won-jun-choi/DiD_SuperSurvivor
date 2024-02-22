@@ -15,7 +15,8 @@ my_SuperSurvivor <- function(data,
                              logit_regressors,
                              survival_regressors,
                              survival_function_type,
-                             optimization_method='Nelder-Mead'){
+                             optimization_method='Nelder-Mead',
+                             return_params=FALSE){
   # unit_variable: str; variable name for unit (in ours, i)
   # time_variable: str; variable name for time (in ours, t)
   # duration_variable: str; variable name for duration (in ours, G)
@@ -94,31 +95,35 @@ my_SuperSurvivor <- function(data,
                  method = optimization_method)
   gamma_hat <- res$par[1:(length(logit_regressors)+1)]
   lambda_hat <- res$par[(length(logit_regressors)+2):(length(res$par)-1)]
-  print('gamma_hat: ')
+  # print('gamma_hat: ')
   print(gamma_hat)
-  print('lambda_hat: ')
+  # print('lambda_hat: ')
   print(lambda_hat)
   num <- exp(cbind(ones,X) %*% t(t(gamma_hat)))
   denom <- 1+exp(cbind(ones,X) %*% t(t(gamma_hat)))
   phat <- num/denom
   
+  if (return_params == TRUE) {
+    return(c(phat, gamma_hat, lambda_hat))
+  }
   return(phat)
 }
 
-res = my_SuperSurvivor(data = df,
-                 unit_variable = 'i',
-                 time_variable = 't',
-                 duration_variable = 'G',
-                 censored_indicator = 'C',
-                 logit_regressors = c('x1','x2','x3','x4'),
-                 survival_regressors = c('z1','z2','z3'),
-                 survival_function_type = 'LogNormal_discrete',
-                 optimization_method='Nelder-Mead')
+if (sys.nframe() == 0) {
+  res = my_SuperSurvivor(data = df,
+                         unit_variable = 'i',
+                         time_variable = 't',
+                         duration_variable = 'G',
+                         censored_indicator = 'C',
+                         logit_regressors = c('x1','x2','x3','x4'),
+                         survival_regressors = c('z1','z2','z3'),
+                         survival_function_type = 'LogNormal_discrete',
+                         optimization_method='Nelder-Mead')
+}
+
 # 
 # df$phat <- res
 # df %>% select(phat,p_cured) %>% View()
-
-length(res$par)
 
 # input
 # data <- df
@@ -154,20 +159,20 @@ length(res$par)
 
 
 ######## old code ########
-df$time_to_treat<-df$G
-df$time_to_treat[df$time_to_treat > t_max] <- t_max # this is unnecessary
-
-#generate status
-df$status <- ifelse(df$C == 0, 1, ifelse(df$C == 1, 0, NA))
-
-super_survivor_logit <- fit.cure.model(Surv(time_to_treat,status) ~ z1+z2, formula.surv=list(~x1+x2+1), data=df, type='mixture',
-                                       bhazard=NULL,dist='weibull', link='logit')
-
-summary(super_survivor_logit)  # pi: logit, theta: weibull
-gammahat <- super_survivor_logit$coefs[['1']]
-
-###### pb of being supersurvivor
-df$phat<-exp(gammahat[1]+gammahat[2]*df$x1+gammahat[3]*df$x2)/(1+exp(gammahat[1]+gammahat[2]*df$x1+gammahat[3]*df$x2))
-
-rm(list = c("gammahat", "super_survivor_logit", "t_max"))
-
+# df$time_to_treat<-df$G
+# df$time_to_treat[df$time_to_treat > t_max] <- t_max # this is unnecessary
+# 
+# #generate status
+# df$status <- ifelse(df$C == 0, 1, ifelse(df$C == 1, 0, NA))
+# 
+# super_survivor_logit <- fit.cure.model(Surv(time_to_treat,status) ~ z1+z2, formula.surv=list(~x1+x2+1), data=df, type='mixture',
+#                                        bhazard=NULL,dist='weibull', link='logit')
+# 
+# summary(super_survivor_logit)  # pi: logit, theta: weibull
+# gammahat <- super_survivor_logit$coefs[['1']]
+# 
+# ###### pb of being supersurvivor
+# df$phat<-exp(gammahat[1]+gammahat[2]*df$x1+gammahat[3]*df$x2)/(1+exp(gammahat[1]+gammahat[2]*df$x1+gammahat[3]*df$x2))
+# 
+# rm(list = c("gammahat", "super_survivor_logit", "t_max"))
+# 
