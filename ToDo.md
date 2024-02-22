@@ -6,8 +6,7 @@ SH
 
 WJ
 - work on DGP
-	- Be strategic... try draw a DAG.
-	- The problem is not that the logit estimation is poor. The fundamental problem is the correlation does not actually contaminate TE...
+	- Be strategic... try to draw a DAG.
+	- The problem is not that the logit estimation is poor. The fundamental problem is the correlation between U and V(?) does not actually contaminate the estimation of ATT (parallel trend)...
 	- Try LATE?
-- re-write DD function, not a script.
-- write a function for MLE (both for supersurvivor.R, log_linear_dgp.R)
+- re-write InfeasibleDD as a function, not a script
