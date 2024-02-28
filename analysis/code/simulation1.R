@@ -38,15 +38,15 @@ ggplot(df, aes(x = t, y = Y, group = factor(G), color = factor(G))) +
 # no need to run unless want to diagnose the supersurvivor estimation
 # source('analysis/code/supersurvivor.R')
 # res <- my_SuperSurvivor(data = df,
-#                             unit_variable = 'i',
-#                             time_variable = 't',
-#                             duration_variable = 'G',
-#                             censored_indicator = 'C',
-#                             logit_regressors = c('x1','x2','x3','x4'),
-#                             survival_regressors = c('z1','z2','z3'),
-#                             survival_function_type = 'LogNormal',
-#                             optimization_method = 'Nelder-Mead',
-#                             return_params = TRUE)
+#                         unit_variable = 'unit',
+#                         time_variable = 't',
+#                         duration_variable = 'G',
+#                         censored_indicator = 'C',
+#                         logit_regressors = c('x1','x2','x3','x4'),
+#                         survival_regressors = c('z1','z2','z3'),
+#                         survival_function_type = 'LogNormal',
+#                         optimization_method = 'Nelder-Mead',
+#                         return_params = TRUE)
 # df$phat <- res[1]
 # gamma_hat <- res[2]
 # lambda_hat <- res[3]
@@ -54,22 +54,31 @@ ggplot(df, aes(x = t, y = Y, group = factor(G), color = factor(G))) +
 
 ###### DiD using reweighting #######
 source('analysis/code/DDsurv.R')
-res = my_SuperSurvivor(data = df,
-                       unit_variable = 'i',
+res = DiD_supersurvivor(data = df,
+                       unit_variable = 'unit',
                        time_variable = 't',
-                       duration_variable = 'G',
+                       group_variable = 'G',
+                       outcome_variable = 'Y',
+                       outcome_regressors = c('x1','x2','x3','x4'),
                        censored_indicator = 'C',
                        logit_regressors = c('x1','x2','x3','x4'),
                        survival_regressors = c('z1','z2','z3'),
                        survival_function_type = 'LogNormal_discrete',
-                       optimization_method='Nelder-Mead')
-  
+                       survival_MLE_optimizer='Nelder-Mead')
+res$TE <- 1
+
 # add DiD using C_tilde (infeasible)
 source('analysis/code/InfeasibleDD.R')
 # merge DDsurv and results_inf using G and t as keys
-DDsurv <- DDsurv %>%
-  left_join(results_inf, by=c('G','t')) %>%
-  select(G,t,TE,ATT,ATT_reweight,ATT_reweight2,ATT_inf)
+res_infeasible <- DD_infeasible(data=df,
+                                unit_variable = 'unit',
+                                time_variable = 't',
+                                group_variable = 'G',
+                                supersurvivor_indicator = 'C_tilde')
+
+res <- res %>%
+  left_join(res_infeasible, by=c('G','t')) %>%
+  select(G,t,TE,ATT,ATT_reweight,ATT_infeasible)
 
 # print the xtable result without row number
 print(xtable(DDsurv), include.rownames = FALSE)

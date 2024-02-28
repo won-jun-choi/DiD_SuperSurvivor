@@ -76,7 +76,7 @@ my_SuperSurvivor <- function(data,
       s <- theta[length(theta)]
       # Z <- data[,survival_regressors] %>% as.matrix()
       Zl <- cbind(ones,Z) %*% t(t(lambda))
-      f <- pnorm((log(G+1)-Zl)/s) - pnorm((log(G)-Zl)/s) # point mass instead of density
+      f <- pnorm((log(G)-Zl)/s) - pnorm((log(G-1)-Zl)/s) # point mass instead of density
       S <- 1 - pnorm((log(G)-Zl)/s)
       
       # C <- data %>% pull(censored_indicator) %>% as.numeric()
