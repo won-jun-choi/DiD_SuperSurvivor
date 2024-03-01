@@ -88,7 +88,8 @@ df <- df %>%
         group_by(G_star) %>%
         group_by(t) %>%
         mutate(delta_gt = t^G_star) %>%
-        mutate(delta_gt = ifelse(G_star==t,0,ifelse(G_star==t-1,0,delta_gt)))
+        mutate(delta_gt = ifelse(G_star==t,0,ifelse(G_star==t-1,0,delta_gt))) %>%
+        mutate(delta_gt = ifelse(C_tilde==1,0,delta_gt)) 
 
 
 
