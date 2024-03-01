@@ -81,9 +81,21 @@ num/denom  # kind of high...
 # generate Y0 and Y1
 beta <- c(10,3,4,5)  # x0,x1,x2,x4
 df$e <- stats::rnorm(n=n*t_max, mean=0, sd=1)  # Y0 error
+
+
+# Change in parallel trend. Couldn't check if it works. 
+df <- df %>%
+        group_by(G_star) %>%
+        group_by(t) %>%
+        mutate(delta_gt = t^G_star) %>%
+        mutate(delta_gt = ifelse(G_star==t,0,ifelse(G_star==t-1,0,delta_gt)))
+
+
+
+# The rest were the same as before. 
 df <- df %>% 
   mutate(tau = t-G) %>% # for time varying treatment
-  mutate(delta_gt = 0) %>% # group specific trend
+ # mutate(delta_gt = 0) %>% # group specific trend
   mutate(Y0 = x1*beta[1] + x2*beta[2] + x3*beta[3] + 1*t + delta_gt + e+V) %>%
   mutate(Y1 = Y0 + 1) %>%
   mutate(Y = Y0*(G>t) + Y1*(G<=t))

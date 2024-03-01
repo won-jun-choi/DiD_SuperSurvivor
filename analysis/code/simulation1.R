@@ -8,6 +8,7 @@ rm(list=ls())
 library(tidyverse)
 library(here)
 library(xtable)
+library(dplyr)
 
 ###### DGP ######
 source('analysis/code/simDGP1.R')  # generate simDGP.csv in temp folder.
