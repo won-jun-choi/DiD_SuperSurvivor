@@ -64,6 +64,7 @@ my_SuperSurvivor <- function(data,
     # L(\theta;X,Z) = \Prod_{i=1}^n [p_uncured * f(dur|Z)]^{uncensored} * \Prod_{i=1}^n [p_cured + p_uncured*S(dur|Z)]^{censored}
     # Thus, l(\tehta;X,Z) = \Sum_{i=1}^n uncensored * [log(p_uncured) + log(f)] + \Sum_{i=1}^n censored[log(p_cured + p_uncured*S)]
     loglik <- function(theta) {
+      # theta' = (gamma', lambda', s)'
       # ones <- rep(1, nrow(data))
       
       gamma <- theta[1:(length(logit_regressors)+1)]
@@ -71,6 +72,7 @@ my_SuperSurvivor <- function(data,
       Xg <- cbind(ones,X) %*% t(t(gamma))
       p_cured <- exp(Xg)/(1+exp(Xg))
       p_uncured <- 1 - p_cured
+      print("Xg ok")
       
       lambda <- theta[(length(logit_regressors)+2):(length(theta)-1)]
       s <- theta[length(theta)]
@@ -78,6 +80,7 @@ my_SuperSurvivor <- function(data,
       Zl <- cbind(ones,Z) %*% t(t(lambda))
       f <- pnorm((log(G)-Zl)/s) - pnorm((log(G-1)-Zl)/s) # point mass instead of density
       S <- 1 - pnorm((log(G)-Zl)/s)
+      print("Zl ok")
       
       # C <- data %>% pull(censored_indicator) %>% as.numeric()
       ret <- (1-C) * (log(p_uncured) + log(f)) + C * (log(p_cured + p_uncured*S))
@@ -88,11 +91,20 @@ my_SuperSurvivor <- function(data,
   }
   
   # optimization
-  initial_value = c(-1,2,0,0,0,-1,2,0,0,2)
-  # initial_value = c(-1,2,-2,2,3, -1,2,-3,4, 1)  # sigma_V
+  gamma_ols <- lm(C ~ X, data=df) %>% coef()
+  lambda_ols <- lm(G ~ Z, data=df) %>% coef()
+  # theta' = (gamma', lambda', s)'. gamma0, lambda0, s = 3
+  # initial_value <- c(gamma_ols, lambda_ols, 3)
+  # initial_value = c(1 * rep(1, 3+length(logit_regressors)+length(survival_regressors)))
+  initial_value = c(-1,2,0,0,-1,2,0,0,2)
+  # initial_value = c(-1,2,-2,3,-1,2,-3,4,1)  # sigma_V
+  loglik(initial_value)
+  print('gaga')
+  
   res <- optim(par = initial_value,
                  fn = loglik,
-                 method = optimization_method)
+                 method = optimization_method,
+               control = list(ndeps = 0.000001))
   gamma_hat <- res$par[1:(length(logit_regressors)+1)]
   lambda_hat <- res$par[(length(logit_regressors)+2):(length(res$par)-1)]
   # print('gamma_hat: ')
