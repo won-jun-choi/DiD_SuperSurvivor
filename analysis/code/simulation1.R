@@ -60,14 +60,14 @@ res = DiD_supersurvivor(data = df,
                        time_variable = 't',
                        group_variable = 'G',
                        outcome_variable = 'Y',
-                       outcome_regressors = c('x1','x2','x3','x4'),
+                       outcome_regressors = c('x1','x2','x4'),
                        censored_indicator = 'C',
-                       logit_regressors = c('x1','x2','x3','x4'),
+                       logit_regressors = c('x1','x2','x3'),
                        survival_regressors = c('z1','z2','z3'),
                        survival_function_type = 'LogNormal_discrete',
                        survival_MLE_optimizer='Nelder-Mead')
-res$TE <- 1
 
+res$TE <- 1
 # add DiD using C_tilde (infeasible)
 source('analysis/code/InfeasibleDD.R')
 # merge DDsurv and results_inf using G and t as keys
@@ -82,12 +82,11 @@ res <- res %>%
   select(G,t,TE,ATT,ATT_reweight,ATT_infeasible)
 
 # print the xtable result without row number
-print(xtable(DDsurv), include.rownames = FALSE)
+print(xtable(res), include.rownames = FALSE)
+# df$p_cured %>% mean()
+# df$phat %>% mean()
 
-df$p_cured %>% mean()
-df$phat %>% mean()
-
-mean((df$p_cured - df$phat)^2)*10000
-
-df %>% group_by(C,C_tilde) %>% summarise(mean(phat))
-df_censored <- df %>% filter(G==10000) %>% select(unit, t, p_cured, phat)
+# mean((df$p_cured - df$phat)^2)*10000
+# 
+# df %>% group_by(C,C_tilde) %>% summarise(mean(phat))
+# df_censored <- df %>% filter(G==10000) %>% select(unit, t, p_cured, phat)

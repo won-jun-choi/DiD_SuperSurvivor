@@ -12,16 +12,16 @@ df <- tibble(unit = rep(c(1:n), each = t_max),
              ones = 1)
 
 # generate regressors X: supersurvivor logit, Z: survival function
-df <- df %>% mutate(x1 = rep(runif(n)*(-2) + 1, each = t_max),
-                    x2 = rep(runif(n), each = t_max),
-                    x3 = rep(rnorm(n), each = t_max),
-                    x4 = rep(rnorm(n), each = t_max),
+df <- df %>% mutate(x1 = rep(runif(n)*(-2) + 1, each = t_max),  # x1 ~ U(-1,1)
+                    x2 = rep(runif(n), each = t_max),  # x2 ~ U(0,1)
+                    x3 = rep(rnorm(n), each = t_max),  # x3 ~ N(0,1)
+                    x4 = rep(rnorm(n), each = t_max),  # x4 ~ N(0,1)
                     z1 = x1,
                     z2 = x2,
                     z3 = rep(rnorm(n), each = t_max))
 
 # supersurvivor logit
-gamma <- c(-1, 2, -2, 2, 3)  # supersurvivor logit parameters (x0,x1,x2,x3)
+gamma <- c(-1, 2, -2, 2)  # supersurvivor logit parameters (x0,x1,x2,x3)
 print('gamma: ')
 print(gamma)
 df <- df %>% 
@@ -72,32 +72,30 @@ if (sys.nframe() == 0) {
   # df %>% group_by(G) %>% summarise(n=n())
 }
 
-
 # In C==1, the proportion of supersurvivors is?
-num = df[df$C==1, 'C_tilde'] %>% sum()
-denom = df[df$C==1, 'C'] %>% sum()
-num/denom  # kind of high...
+if (sys.nframe() == 0) {
+  num = df[df$C==1, 'C_tilde'] %>% sum()
+  denom = df[df$C==1, 'C'] %>% sum()
+  num/denom  # kind of high...
+  rm(list = c('num', 'denom'))
+}
 
 # generate Y0 and Y1
 beta <- c(10,3,4,5)  # x0,x1,x2,x4
 df$e <- stats::rnorm(n=n*t_max, mean=0, sd=1)  # Y0 error
 
-
 # Change in parallel trend. Couldn't check if it works. 
 df <- df %>%
         group_by(G_star) %>%
-        group_by(t) %>%
-        mutate(delta_gt = t^G_star) %>%
+        mutate(delta_gt = t*runif(n=1)) %>%
         mutate(delta_gt = ifelse(G_star==t,0,ifelse(G_star==t-1,0,delta_gt))) %>%
-        mutate(delta_gt = ifelse(C_tilde==1,0,delta_gt)) 
-
-
+        mutate(delta_gt = ifelse(C_tilde==1,0,delta_gt))
 
 # The rest were the same as before. 
 df <- df %>% 
   mutate(tau = t-G) %>% # for time varying treatment
- # mutate(delta_gt = 0) %>% # group specific trend
-  mutate(Y0 = x1*beta[1] + x2*beta[2] + x3*beta[3] + 1*t + delta_gt + e+V) %>%
+  mutate(delta_gt = 0) %>% # group specific trend
+  mutate(Y0 = beta[1] + x1*beta[2] + x2*beta[3] + x4*beta[4] + 1*t + e) %>%
   mutate(Y1 = Y0 + 1) %>%
   mutate(Y = Y0*(G>t) + Y1*(G<=t))
 
@@ -117,6 +115,6 @@ print(1)
 write_csv(df, "analysis/temp/simDGP1.csv")
 
 # clear local variables
-rm(list=c('n','t_max','gamma','lambda','df','beta','num','denom'))
+rm(list=c('n','t_max','gamma','lambda','df','beta'))
 
 

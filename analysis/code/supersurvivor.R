@@ -22,7 +22,7 @@ my_SuperSurvivor <- function(data,
   # duration_variable: str; variable name for duration (in ours, G)
   # logit_regressors: list(str); list of variable names for logit (x)
   # survival_regressors: list(str); list of variable names for survival (z)
-  # survival_function_type: 'Weibull', 'LogNormal'
+  # survival_function_type: 'Weibull', 'LogNormal', 'LogNormal_discrete'
   
   # t_max <- data %>% pull({{time_variable}}) %>% max()
   ones <- rep(1, nrow(data))
