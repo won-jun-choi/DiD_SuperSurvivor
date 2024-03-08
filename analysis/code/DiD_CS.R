@@ -1,3 +1,7 @@
+if (sys.nframe() == 0) {
+  rm(list = ls())
+}
+
 #'
 #'
 #'
