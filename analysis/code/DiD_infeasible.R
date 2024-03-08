@@ -3,12 +3,17 @@
 # Author: Wonjun
 # Last Edit: Dec-03-2023
 # Description: haha
-
+if (sys.nframe() == 0) {
+ rm(list = ls())
+}
+    
 DiD_infeasible <- function(data,
                            unit_variable,
                            time_variable,
                            group_variable,
-                           supersurvivor_indicator) {
+                           supersurvivor_indicator,
+                           outcome_variable,
+                           outcome_regressors) {
   # generate dataframe for DD
   df_DD <- data
   df_DD['i_'] <- df_DD[unit_variable]
@@ -34,17 +39,7 @@ DiD_infeasible <- function(data,
     T_group <- df_DD %>% filter(G_==g__)
     C_group <- df_DD %>% filter(C_tilde_==1)
     
-    # m(g,t|X)
-    C_group <- C_group %>%
-      mutate(Yt = ifelse(t_==t__,Y,NA),
-             Ygm1 = ifelse(t_==g__-1,Y,NA)) %>%  # gm1: g minus 1
-      group_by(i_) %>%
-      mutate(dY = sum(Yt, na.rm=T) - sum(Ygm1, na.rm=T)) %>%
-      ungroup() %>%
-      distinct(i_, .keep_all=TRUE)
-    m0 <- lm('dY ~ x1+x2', data=C_group)
-    
-    # regression imputation DD
+    # T group and C group
     T_group <- T_group %>%
       mutate(Yt = ifelse(t_==t__,Y,NA),
              Ygm1 = ifelse(t_==g__-1,Y,NA)) %>%
@@ -52,17 +47,25 @@ DiD_infeasible <- function(data,
       mutate(dY = sum(Yt, na.rm=T) - sum(Ygm1, na.rm=T)) %>%
       ungroup() %>%
       distinct(i_, .keep_all=TRUE)
-    Em1 <- mean(T_group$dY)
-    T_group$Em0 <- predict(m0, newdata=T_group)
-    Em0 <- T_group$Em0 %>% mean()
+    C_group <- C_group %>%
+      mutate(Yt = ifelse(t_==t__,Y,NA),
+             Ygm1 = ifelse(t_==g__-1,Y,NA)) %>%  # gm1: g minus 1
+      group_by(i_) %>%
+      mutate(dY = sum(Yt, na.rm=T) - sum(Ygm1, na.rm=T)) %>%
+      ungroup() %>%
+      distinct(i_, .keep_all=TRUE)
     
     # ATT(g,t)
+    Em1 <- mean(T_group$dY)
+    formula <- paste0('dY ~ ', paste0(outcome_regressors, collapse = '+'))
+    m0 <- lm(formula, data=C_group)
+    Em0 <- predict(m0, newdata=T_group) %>% mean()
     results[i,'ATT_infeasible'] <- Em1 - Em0
   }
   return(results)
 }
 
-if (sys.nframe() > 0) {
+if (sys.nframe() == 0) {
   # test DGP for checking code validity
   source('analysis/code/testDGP.R')
   test_data <- read_csv('analysis/temp/testDGP.csv')
@@ -70,6 +73,20 @@ if (sys.nframe() > 0) {
                         unit_variable='unit',
                         time_variable='t',
                         group_variable='G',
+                        outcome_variable='Y',
+                        outcome_regressors = c('x1','x2','x4'),
                         supersurvivor_indicator='C_tilde')
   res
 }
+
+################################################################################
+# data <- read_csv('analysis/temp/testDGP.csv')
+# unit_variable <- 'unit'
+# time_variable <- 't'
+# group_variable <- 'G'
+# supersurvivor_indicator <- 'C_tilde'
+# outcome_regressors <- c('x1', 'x2', 'x4')
+# outcome_regressors <- '1'
+# 
+# formula <- paste0('dY ~ ', paste0(outcome_regressors, collapse = '+'))
+# formula
