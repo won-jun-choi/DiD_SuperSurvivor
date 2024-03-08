@@ -4,11 +4,11 @@
 # Last Edit: Dec-03-2023
 # Description: haha
 
-DD_infeasible <- function(data,
-                          unit_variable,
-                          time_variable,
-                          group_variable,
-                          supersurvivor_indicator) {
+DiD_infeasible <- function(data,
+                           unit_variable,
+                           time_variable,
+                           group_variable,
+                           supersurvivor_indicator) {
   # generate dataframe for DD
   df_DD <- data
   df_DD['i_'] <- df_DD[unit_variable]
@@ -18,7 +18,7 @@ DD_infeasible <- function(data,
   
   t_min <- df_DD['t_'] %>% min()
   t_max <- df_DD['t_'] %>% max()  # we can get ATT from (t_min+1)~t_max
-  G_max <- df_DD[df_DD['G_']<100, 'G_'] %>% max()
+  G_max <- df_DD[df_DD['G_']<1000, 'G_'] %>% max()
   
   # dataframe that contains all possible ATTs
   results <- data.frame(G = rep(c(1:G_max), each=t_max),
@@ -61,3 +61,14 @@ DD_infeasible <- function(data,
   }
   return(results)
 }
+
+################################################################################
+# test DGP for checking code validity
+# source('analysis/code/testDGP.R')
+# test_data <- read_csv('analysis/temp/testDGP.csv')
+# res <- DiD_infeasible(data=test_data,
+#                       unit_variable='unit',
+#                       time_variable='t',
+#                       group_variable='G',
+#                       supersurvivor_indicator='C_tilde')
+# res
