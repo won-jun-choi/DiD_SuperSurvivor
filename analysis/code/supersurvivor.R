@@ -6,7 +6,10 @@
 # Last Edit/Editor: Feb-15-2024 / Wonjun
 # Description: Re-write the script as a function.
 
-# Load packages
+if (sys.nframe() == 0) {
+  rm(list=ls())
+}
+
 my_SuperSurvivor <- function(data,
                              unit_variable,
                              time_variable,
@@ -16,6 +19,7 @@ my_SuperSurvivor <- function(data,
                              survival_regressors,
                              survival_function_type,
                              optimization_method='Nelder-Mead',
+                             MLE_init_values='NULL',
                              return_params=FALSE){
   # unit_variable: str; variable name for unit (in ours, i)
   # time_variable: str; variable name for time (in ours, t)
@@ -91,13 +95,16 @@ my_SuperSurvivor <- function(data,
   }
   
   # optimization
-  gamma_ols <- lm(C ~ X, data=df) %>% coef()
-  lambda_ols <- lm(G ~ Z, data=df) %>% coef()
-  # theta' = (gamma', lambda', s)'. gamma0, lambda0, s = 3
-  # initial_value <- c(gamma_ols, lambda_ols, 3)
-  # initial_value = c(1 * rep(1, 3+length(logit_regressors)+length(survival_regressors)))
-  initial_value = c(-1,2,0,0,-1,2,0,0,2)
-  # initial_value = c(-1,2,-2,3,-1,2,-3,4,1)  # sigma_V
+  if (is.null(MLE_init_values) == TRUE) {
+    formula <- paste0('C ~ ',paste0(logit_regressors,collapse = ' + '))
+    gamma_ols <- lm(formula, data=df) %>% coef()
+    formula <- paste0('C ~ ',paste0(survival_regressors,collapse = ' + '))
+    lambda_ols <- lm(formula, data=df) %>% coef()
+    # theta' = (gamma', lambda', s)'. gamma0, lambda0, s = 3
+    initial_value <- c(gamma_ols, lambda_ols, 3)
+  } else {
+    initial_value <- MLE_init_values
+  }
   loglik(initial_value)
   print('gaga')
   
@@ -122,12 +129,13 @@ my_SuperSurvivor <- function(data,
 }
 
 if (sys.nframe() == 0) {
+  df <- read_csv('analysis/temp/testDGP.csv')
   res = my_SuperSurvivor(data = df,
                          unit_variable = 'i',
                          time_variable = 't',
                          duration_variable = 'G',
                          censored_indicator = 'C',
-                         logit_regressors = c('x1','x2','x3','x4'),
+                         logit_regressors = c('x1','x2','x3'),
                          survival_regressors = c('z1','z2','z3'),
                          survival_function_type = 'LogNormal_discrete',
                          optimization_method='Nelder-Mead')
