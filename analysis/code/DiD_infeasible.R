@@ -62,13 +62,14 @@ DiD_infeasible <- function(data,
   return(results)
 }
 
-################################################################################
-# test DGP for checking code validity
-# source('analysis/code/testDGP.R')
-# test_data <- read_csv('analysis/temp/testDGP.csv')
-# res <- DiD_infeasible(data=test_data,
-#                       unit_variable='unit',
-#                       time_variable='t',
-#                       group_variable='G',
-#                       supersurvivor_indicator='C_tilde')
-# res
+if (sys.nframe() > 0) {
+  # test DGP for checking code validity
+  source('analysis/code/testDGP.R')
+  test_data <- read_csv('analysis/temp/testDGP.csv')
+  res <- DiD_infeasible(data=test_data,
+                        unit_variable='unit',
+                        time_variable='t',
+                        group_variable='G',
+                        supersurvivor_indicator='C_tilde')
+  res
+}
